@@ -1,0 +1,16 @@
+.container {
+  display: grid;
+  grid-template: repeat(5, 1fr) / repeat(5, 1fr);
+  width: 500px;
+  height: 500px;
+  font-size: 40px;
+  border: 5px solid black;
+  grid-gap: 5px;
+}
+
+.container > div {
+  border: 1px solid black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

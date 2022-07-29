@@ -15,10 +15,14 @@ export default class Game {
 
   model: BaseModel;
 
-  constructor({ width = 10, height = 10 }: GameOptions) {
+  maxScore: number;
+
+  constructor({ width = 5, height = 5, maxScore = 2000 }: GameOptions) {
     this.width = width;
 
     this.height = height;
+
+    this.maxScore = maxScore;
 
     this.trainingData = new TrainingDataService();
 
@@ -33,6 +37,7 @@ export default class Game {
       height: this.height,
       trainingData: this.trainingData,
       model: this.model,
+      maxScore: this.maxScore,
     });
   }
 
@@ -45,7 +50,6 @@ export default class Game {
     if (this.snake.isDead || this.snake.victory) {
       let snake = this.snake;
       await this.model.fit();
-      this.reset();
       return snake;
     }
   }
@@ -53,6 +57,7 @@ export default class Game {
   async iterateUntilDead() {
     while (true) {
       const snake = await this.iterateOnce();
+      this.reset();
       if (snake) {
         return snake;
       }
@@ -72,20 +77,18 @@ export default class Game {
 
     let length = 0;
 
+    let victory = 0;
+
     for (let index = 0; index < iterateCount; index++) {
       const snake = await this.iterateUntilDead();
 
       if (snake.score) {
-        console.log(
-          index,
-          "score",
-          snake.score,
-          "step",
-          snake.step,
-          "length",
-          snake.body.length
-        );
+        console.log(index, "score", snake.score, "step", snake.step);
         length++;
+      }
+
+      if (snake.victory) {
+        victory++;
       }
 
       if (index % 50 === 0) {
@@ -94,6 +97,10 @@ export default class Game {
     }
 
     console.log(`summary: length of snake that eaten`, length);
+
+    console.log(`summary: victory of snake`, victory);
+
+    this.model.log();
 
     return this.save();
   }

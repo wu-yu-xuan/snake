@@ -1,14 +1,15 @@
-import { readJSON, writeJSON } from "fs-extra";
 import { MAX_TRAINING_DATA_LENGTH } from "./const";
 import { SingleTrainingData } from "./types";
+import { writeJSON } from "fs-extra";
 
 export default class TrainingDataService {
   trainingDataArray: SingleTrainingData[] = [];
 
   async load() {
     try {
-      const json = await readJSON("./trainingData.json");
+      const json = (await import("./data/trainingData.json")).default;
       if (Array.isArray(json)) {
+        console.log(`load training data`, json.length);
         this.trainingDataArray = json;
       }
     } catch (err) {}
@@ -30,8 +31,7 @@ export default class TrainingDataService {
 
   take(dataLength = 50) {
     if (dataLength > this.trainingDataArray.length) {
-      console.log(`warning: training data is not enough`);
-      return this.trainingDataArray;
+      return [];
     }
     const indexArray: number[] = [];
     while (indexArray.length < dataLength) {

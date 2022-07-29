@@ -1,14 +1,14 @@
-import { Tensor } from "@tensorflow/tfjs";
-import { readJSON, writeJSON } from "fs-extra";
 import { MAX_TRAINING_DATA_LENGTH } from "../const";
 import { QLearningModelOptions, QTableItem, SnakeAction } from "../types";
 import roulette from "../utils/roulette";
+import { writeJSON } from "fs-extra";
 import BaseModel from "./BaseModel";
 
 const snakeActions = [
-  SnakeAction.straight,
-  SnakeAction.left,
+  SnakeAction.up,
   SnakeAction.right,
+  SnakeAction.down,
+  SnakeAction.left,
 ];
 
 const defaultQ = 1;
@@ -20,9 +20,13 @@ export default class QLearningModel extends BaseModel {
 
   QTable: QTableItem[] = [];
 
+  getAllCount = 0;
+
+  getSuccessCount = 0;
+
   constructor({
-    learnRate = 0.1,
-    attenuationFactor = 0.5,
+    learnRate = 0.5,
+    attenuationFactor = 0.9,
     trainingData,
   }: QLearningModelOptions) {
     super({ trainingData });
@@ -30,17 +34,9 @@ export default class QLearningModel extends BaseModel {
     this.attenuationFactor = attenuationFactor;
   }
 
-  async predict(currentStateTensor: Tensor): Promise<SnakeAction> {
-    const currentState = (await currentStateTensor.array()) as number[];
+  async predict(currentState: number[]): Promise<SnakeAction> {
     if (this.trainingData.trainingDataArray.length < MAX_TRAINING_DATA_LENGTH) {
-      console.log("random");
-      /**
-       * 没有足够的训练集，则随机进行，积累数据
-       */
-      if (Math.random() < 0.5) {
-        return SnakeAction.straight;
-      }
-      return Math.random() < 0.5 ? SnakeAction.left : SnakeAction.right;
+      return Math.floor(Math.random() * snakeActions.length);
     }
 
     const rouletteArray = snakeActions.map((action) => {
@@ -50,9 +46,9 @@ export default class QLearningModel extends BaseModel {
       };
     });
 
-    if (false) {
+    if (Math.random() < 0.001) {
       /**
-       * 没有足够的 Q，按照轮盘赌算法进行随机
+       * 按照轮盘赌算法进行随机
        */
       return roulette(rouletteArray);
     }
@@ -70,16 +66,22 @@ export default class QLearningModel extends BaseModel {
 
   async fit() {
     const dataArray = this.trainingData.take(100);
+    if (!dataArray.length) {
+      return;
+    }
     dataArray.forEach((data) => {
       const currentQ = this.getQ(data);
       const nextQArray = snakeActions.map((action) => {
-        return this.getQ({ ...data, action });
+        return this.getQ({ currentState: data.nextState, action });
       });
       const nextQ = Math.max(...nextQArray);
       const newQ =
         currentQ +
         this.learnRate *
           (data.reward + this.attenuationFactor * nextQ - currentQ);
+      if (newQ > 40) {
+        debugger;
+      }
       this.setQ({
         currentState: data.currentState,
         action: data.action,
@@ -89,14 +91,18 @@ export default class QLearningModel extends BaseModel {
   }
 
   getQ({ currentState, action }: Omit<QTableItem, "Q">) {
-    return (
-      this.QTable.find((x) => {
-        return (
-          x.action === action &&
-          x.currentState.every((y, i) => y === currentState[i])
-        );
-      })?.Q ?? defaultQ
-    );
+    this.getAllCount++;
+    const Q = this.QTable.find((x) => {
+      return (
+        x.action === action &&
+        x.currentState.every((y, i) => y === currentState[i])
+      );
+    })?.Q;
+    if (Q) {
+      this.getSuccessCount++;
+      return Q;
+    }
+    return defaultQ;
   }
 
   setQ({ currentState, action, Q }: QTableItem) {
@@ -115,7 +121,7 @@ export default class QLearningModel extends BaseModel {
 
   async load(): Promise<void> {
     try {
-      const json = await readJSON(`Q-learning.json`);
+      const json = (await import(`../data/Q-learning.json`)).default;
       if (Array.isArray(json)) {
         this.QTable = json;
         console.log(`read q table`, this.QTable.length);
@@ -125,5 +131,9 @@ export default class QLearningModel extends BaseModel {
 
   async save(): Promise<void> {
     return writeJSON(`Q-learning.json`, this.QTable);
+  }
+
+  log() {
+    console.log(`successful get Q: `, this.getSuccessCount / this.getAllCount);
   }
 }

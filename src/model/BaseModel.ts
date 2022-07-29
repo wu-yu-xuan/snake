@@ -1,4 +1,3 @@
-import { Tensor } from "@tensorflow/tfjs";
 import TrainingDataService from "../TrainingDataService";
 import { BaseModelOptions, SnakeAction } from "../types";
 
@@ -12,8 +11,8 @@ export default abstract class BaseModel {
     this.trainingData = trainingData;
   }
 
-  async predict(currentState: Tensor): Promise<SnakeAction> {
-    return SnakeAction.straight;
+  async predict(currentState: number[]): Promise<SnakeAction> {
+    return SnakeAction.up;
   }
 
   async fit() {}
@@ -21,4 +20,6 @@ export default abstract class BaseModel {
   async save() {}
 
   async load() {}
+
+  log() {}
 }

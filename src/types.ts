@@ -1,10 +1,10 @@
 import BaseModel from "./model/BaseModel";
-import Network from "./Network";
 import TrainingDataService from "./TrainingDataService";
 
 export interface GameOptions {
   width?: number;
   height?: number;
+  maxScore?: number;
 }
 
 export interface SnakeOptions {
@@ -12,6 +12,7 @@ export interface SnakeOptions {
   height: number;
   trainingData: TrainingDataService;
   model: BaseModel;
+  maxScore: number;
 }
 
 export interface NetworkOptions {
@@ -25,9 +26,10 @@ export interface Point {
 }
 
 export enum SnakeAction {
-  straight = 0,
-  left = 1,
-  right = 2,
+  up = 0,
+  right = 1,
+  down = 2,
+  left = 3,
 }
 
 export enum SnakeDirection {
@@ -70,6 +72,6 @@ export interface QTableItem {
 }
 
 export interface RouletteItem<T> {
-  value: T,
-  probability: number,
+  value: T;
+  probability: number;
 }
