@@ -6,7 +6,7 @@ const game = new Game({
 });
 
 async function main() {
-  game.iterate(100);
+  game.iterate(10);
 }
 
 main();

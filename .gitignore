@@ -24,3 +24,5 @@ dist-ssr
 *.sw?
 
 weights.json
+Q-learning.json
+trainingData.json
