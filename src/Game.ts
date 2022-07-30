@@ -57,8 +57,8 @@ export default class Game {
   async iterateUntilDead() {
     while (true) {
       const snake = await this.iterateOnce();
-      this.reset();
       if (snake) {
+        this.reset();
         return snake;
       }
     }

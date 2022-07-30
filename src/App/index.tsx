@@ -41,9 +41,14 @@ export default function App() {
         </button>
         <div>score: {game.snake.score}</div>
       </div>
-      <div className="container">
-        {new Array(5).fill(0).map((_, x) => {
-          return new Array(5).fill(0).map((_, y) => {
+      <div
+        className="container"
+        style={{
+          gridTemplate: `repeat(${game.width}, 1fr) / repeat(${game.height}, 1fr)`,
+        }}
+      >
+        {new Array(game.width).fill(0).map((_, x) => {
+          return new Array(game.height).fill(0).map((_, y) => {
             const key = [x, y].join(",");
             if (x === game.snake.body.x && y === game.snake.body.y) {
               return <div key={key}>🐍</div>;

@@ -46,7 +46,7 @@ export default class QLearningModel extends BaseModel {
       };
     });
 
-    if (Math.random() < 0.001) {
+    if (false) {
       /**
        * 按照轮盘赌算法进行随机
        */
@@ -130,7 +130,7 @@ export default class QLearningModel extends BaseModel {
   }
 
   async save(): Promise<void> {
-    return writeJSON(`Q-learning.json`, this.QTable);
+    return writeJSON(`./src/data/Q-learning.json`, this.QTable);
   }
 
   log() {

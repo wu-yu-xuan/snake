@@ -63,6 +63,8 @@ export default class Snake {
 
     const nextPoint = this.getNextPoint(action);
 
+    this.body = nextPoint;
+
     /**
      * 撞墙或者撞到自身就死咯
      */
@@ -70,6 +72,12 @@ export default class Snake {
 
     if (isDead) {
       this.isDead = true;
+      this.trainingData.push({
+        currentState,
+        action,
+        reward: -100,
+        nextState: this.getState(),
+      });
       return;
     }
 
@@ -77,14 +85,13 @@ export default class Snake {
 
     this.leftStep--;
 
-    this.body = nextPoint;
-
     const eaten = this.food!.x === nextPoint.x && this.food!.y === nextPoint.y;
 
     /**
      * 吃到食物了
      */
     if (eaten) {
+      const nextState = this.getState();
       const food = generateFood({
         width: this.width,
         height: this.height,
@@ -102,7 +109,7 @@ export default class Snake {
         currentState,
         action,
         reward,
-        nextState: this.getState(),
+        nextState,
       });
 
       if (this.score >= this.maxScore) {
@@ -132,7 +139,10 @@ export default class Snake {
   }
 
   getState() {
-    return [this.body.x, this.body.y, this.food?.x ?? 0, this.food?.y ?? 0];
+    return [
+      this.body.x - (this.food?.x ?? 0),
+      this.body.y - (this.food?.y ?? 0),
+    ];
   }
 
   /**

@@ -16,7 +16,7 @@ export default class TrainingDataService {
   }
 
   save() {
-    return writeJSON("./trainingData.json", this.trainingDataArray);
+    return writeJSON("./src/data/trainingData.json", this.trainingDataArray);
   }
 
   push(trainingData: SingleTrainingData) {
