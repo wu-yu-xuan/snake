@@ -1,15 +1,11 @@
-import { MAX_TRAINING_DATA_LENGTH } from "../const";
+/**
+ * @fileoverview do not use. see origin/Q-learning instead.
+ */
+import { MAX_TRAINING_DATA_LENGTH, SNAKE_ACTION_ARRAY } from "../const";
 import { QLearningModelOptions, QTableItem, SnakeAction } from "../types";
 import roulette from "../utils/roulette";
 import { writeJSON } from "fs-extra";
 import BaseModel from "./BaseModel";
-
-const snakeActions = [
-  SnakeAction.up,
-  SnakeAction.right,
-  SnakeAction.down,
-  SnakeAction.left,
-];
 
 const defaultQ = 1;
 
@@ -36,10 +32,10 @@ export default class QLearningModel extends BaseModel {
 
   async predict(currentState: number[]): Promise<SnakeAction> {
     if (this.trainingData.trainingDataArray.length < MAX_TRAINING_DATA_LENGTH) {
-      return Math.floor(Math.random() * snakeActions.length);
+      return Math.floor(Math.random() * SNAKE_ACTION_ARRAY.length);
     }
 
-    const rouletteArray = snakeActions.map((action) => {
+    const rouletteArray = SNAKE_ACTION_ARRAY.map((action) => {
       return {
         value: action,
         probability: this.getQ({ currentState, action }),
@@ -71,7 +67,7 @@ export default class QLearningModel extends BaseModel {
     }
     dataArray.forEach((data) => {
       const currentQ = this.getQ(data);
-      const nextQArray = snakeActions.map((action) => {
+      const nextQArray = SNAKE_ACTION_ARRAY.map((action) => {
         return this.getQ({ currentState: data.nextState, action });
       });
       const nextQ = Math.max(...nextQArray);

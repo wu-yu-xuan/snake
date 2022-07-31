@@ -72,12 +72,12 @@ export default class Snake {
 
     if (isDead) {
       this.isDead = true;
-      this.trainingData.push({
-        currentState,
-        action,
-        reward: -100,
-        nextState: this.getState(),
-      });
+      // this.trainingData.push({
+      //   currentState,
+      //   action,
+      //   reward: -100,
+      //   nextState: this.getState(),
+      // });
       return;
     }
 
@@ -91,26 +91,34 @@ export default class Snake {
      * 吃到食物了
      */
     if (eaten) {
+      /**
+       * 记录状态
+       */
       const nextState = this.getState();
-      const food = generateFood({
-        width: this.width,
-        height: this.height,
-        body: this.body,
-      });
-      const reward = 10;
+
+      const reward = 1;
       this.score += reward;
       this.leftStep += reward;
-      if (food) {
-        this.food = food;
-      } else {
-        this.victory = true;
-      }
       this.trainingData.push({
         currentState,
         action,
         reward,
         nextState,
       });
+
+      /**
+       * 生成下个食物
+       */
+      const food = generateFood({
+        width: this.width,
+        height: this.height,
+        body: this.body,
+      });
+      if (food) {
+        this.food = food;
+      } else {
+        this.victory = true;
+      }
 
       if (this.score >= this.maxScore) {
         this.victory = true;

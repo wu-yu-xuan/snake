@@ -1,4 +1,5 @@
 import BaseModel from "./model/BaseModel";
+import DQNModel from "./model/DQNModel";
 import QLearningModel from "./model/QLearningModel";
 import Snake from "./Snake";
 import TrainingDataService from "./TrainingDataService";
@@ -26,7 +27,7 @@ export default class Game {
 
     this.trainingData = new TrainingDataService();
 
-    this.model = new QLearningModel({ trainingData: this.trainingData });
+    this.model = new DQNModel({ trainingData: this.trainingData });
 
     this.reset();
   }

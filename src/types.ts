@@ -32,13 +32,6 @@ export enum SnakeAction {
   left = 3,
 }
 
-export enum SnakeDirection {
-  up = 0,
-  right = 1,
-  down = 2,
-  left = 3,
-}
-
 export interface SingleTrainingData {
   currentState: number[];
   action: SnakeAction;
@@ -74,4 +67,24 @@ export interface QTableItem {
 export interface RouletteItem<T> {
   value: T;
   probability: number;
+}
+
+export interface DQNModelOptions extends BaseModelOptions {
+  nodeLengthOfLayers?: number[];
+  /**
+   * 学习率。
+   * 取值范围：0～1。
+   * 越高学习速度越快，但也有可能过拟合。
+   */
+  learnRate?: number;
+  /**
+   * 衰减系数。
+   * 取值范围：0～1。
+   * 越高越在乎未来奖励，越低越在乎眼前奖励。
+   */
+  attenuationFactor?: number;
+  /**
+   * 过多少周期后把 trainingModel 同步给 fixedModel
+   */
+  syncEpoch?: number;
 }
