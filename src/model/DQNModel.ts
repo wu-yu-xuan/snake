@@ -68,12 +68,12 @@ export default class DQNModel extends BaseModel {
     this.trainingModel = this.createModel();
 
     this.fixedModel = this.createModel();
+
+    this.fixedModel.setWeights(this.trainingModel.getWeights());
   }
 
   async predict(currentState: number[]): Promise<SnakeAction> {
-    if (
-      this.trainingData.trainingDataArray.length < MAX_TRAINING_DATA_LENGTH
-    ) {
+    if (this.trainingData.trainingDataArray.length < MAX_TRAINING_DATA_LENGTH) {
       return Math.floor(Math.random() * SNAKE_ACTION_ARRAY.length);
     }
 
@@ -115,7 +115,7 @@ export default class DQNModel extends BaseModel {
       batchSize,
     ]).transpose();
 
-    const oldQTensor = this.fixedModel.predict(inputTensor) as Tensor;
+    const oldQTensor = this.trainingModel.predict(inputTensor) as Tensor;
 
     /**
      * 1 * batchSize
@@ -179,10 +179,12 @@ export default class DQNModel extends BaseModel {
       if (index === 0) {
         return layers.batchNormalization({ inputShape: [units] });
       }
+
       const layer = layers.dense({
         units,
         useBias: true,
-        activation: "relu",
+        activation:
+          index === this.nodeLengthOfLayers.length - 1 ? "relu" : "sigmoid",
       });
       return layer;
     });
