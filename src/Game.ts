@@ -83,7 +83,7 @@ export default class Game {
     for (let index = 0; index < iterateCount; index++) {
       const snake = await this.iterateUntilDead();
 
-      if (snake.score) {
+      if (snake.score > 1) {
         console.log(index, "score", snake.score, "step", snake.step);
         length++;
       }

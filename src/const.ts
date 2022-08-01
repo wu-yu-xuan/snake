@@ -6,7 +6,7 @@ import { Point, SnakeAction } from "./types";
  */
 export const SNAKE_STATE_LENGTH = 2;
 
-export const MAX_TRAINING_DATA_LENGTH = 5000;
+export const MAX_TRAINING_DATA_LENGTH = 2000;
 
 export const SNAKE_DIRECTION_ACTION_MAP: Record<SnakeAction, Point> = {
   [SnakeAction.up]: { x: 0, y: 1 },

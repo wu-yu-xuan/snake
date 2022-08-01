@@ -138,7 +138,8 @@ export default class DQNModel extends BaseModel {
          */
         const newQ =
           oldQ +
-          this.learnRate * (x.reward + this.attenuationFactor * maxQ - oldQ);
+          this.learnRate *
+            (x.reward + (x.done ? 0 : this.attenuationFactor * maxQ) - oldQ);
         return newQ;
       })
     );

@@ -72,12 +72,13 @@ export default class Snake {
 
     if (isDead) {
       this.isDead = true;
-      // this.trainingData.push({
-      //   currentState,
-      //   action,
-      //   reward: -100,
-      //   nextState: this.getState(),
-      // });
+      this.trainingData.push({
+        currentState,
+        action,
+        reward: 0,
+        nextState: this.getState(),
+        done: true,
+      });
       return;
     }
 
@@ -104,6 +105,7 @@ export default class Snake {
         action,
         reward,
         nextState,
+        done: false,
       });
 
       /**
@@ -127,7 +129,8 @@ export default class Snake {
     }
 
     const nextState = this.getState();
-    const reward = 0;
+    const reward =
+      this.getRewardByState(nextState) - this.getRewardByState(currentState);
     this.score += reward;
     if (this.leftStep < 0) {
       this.isDead = true;
@@ -143,6 +146,7 @@ export default class Snake {
       action,
       reward,
       nextState,
+      done: false,
     });
   }
 
@@ -171,5 +175,9 @@ export default class Snake {
       x: this.body.x + movement.x,
       y: this.body.y + movement.y,
     };
+  }
+
+  getRewardByState(state: number[]) {
+    return 0.001 / Math.sqrt(state.reduce((acc, cur) => acc + cur * cur, 0));
   }
 }

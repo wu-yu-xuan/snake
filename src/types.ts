@@ -37,6 +37,7 @@ export interface SingleTrainingData {
   action: SnakeAction;
   nextState: number[];
   reward: number;
+  done?: boolean;
 }
 
 export interface BaseModelOptions {
