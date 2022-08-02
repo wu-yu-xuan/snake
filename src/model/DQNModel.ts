@@ -36,10 +36,7 @@ export default class DQNModel extends BaseModel {
     attenuationFactor = 0.8,
     syncEpoch = 20,
     nodeLengthOfLayers = [
-      /**
-       * +1 是指 action
-       */
-      SNAKE_STATE_LENGTH + 1,
+      SNAKE_STATE_LENGTH,
       8,
       16,
       32,
@@ -47,10 +44,10 @@ export default class DQNModel extends BaseModel {
       8,
       4,
       /**
-       * 仅一个 Q。
-       * 当然也可以设计成 action 个数个 Q，不过有点难度了。
+       * action 个数个 Q。
+       * 如果 action 作为输入层，则需要记得进行 oneHot 编码。
        */
-      1,
+      SNAKE_ACTION_ARRAY.length,
     ],
   }: DQNModelOptions) {
     super({ trainingData });
@@ -77,13 +74,17 @@ export default class DQNModel extends BaseModel {
       return Math.floor(Math.random() * SNAKE_ACTION_ARRAY.length);
     }
 
-    const outputArray = await this.getOutputArray(
-      this.trainingModel,
-      currentState
-    );
+    /**
+     * 4 * 1
+     */
+    const outputTensor = this.trainingModel.predict(
+      tensor2d(currentState, [1, SNAKE_STATE_LENGTH])
+    ) as Tensor;
+
+    const outputArray = ((await outputTensor.array()) as [number[]])[0];
 
     return outputArray.reduce<number>((acc, cur, index) => {
-      if (outputArray[acc][0] >= cur[0]) {
+      if (outputArray[acc] >= cur) {
         return acc;
       }
       return index;
@@ -92,6 +93,7 @@ export default class DQNModel extends BaseModel {
 
   async fit() {
     const batchSize = 300;
+
     const dataArray = this.trainingData.take(batchSize);
 
     if (!dataArray.length) {
@@ -103,9 +105,7 @@ export default class DQNModel extends BaseModel {
       this.syncEpochLeft = this.syncEpoch;
     }
 
-    const inputArray = dataArray
-      .map((x) => [...x.currentState, x.action])
-      .flat();
+    const inputArray = dataArray.map((x) => x.currentState).flat();
 
     /**
      * batchSize * 3
@@ -115,40 +115,53 @@ export default class DQNModel extends BaseModel {
       batchSize,
     ]).transpose();
 
+    /**
+     * 4 * batchSize
+     */
     const oldQTensor = this.trainingModel.predict(inputTensor) as Tensor;
 
     /**
-     * 1 * batchSize
+     * 4 * batchSize
      */
-    const oldQArray = (await oldQTensor.array()) as [number][];
+    const oldQArray = (await oldQTensor.array()) as number[][];
 
     const outputArray = await Promise.all(
       dataArray.map(async (x, index) => {
-        const outputArray = await this.getOutputArray(
-          this.fixedModel,
-          x.nextState
+        return Promise.all(
+          x.nextArray.map(async ({ action, nextState, reward, done }) => {
+            const outputTensor = this.fixedModel.predict(
+              tensor2d(nextState, [1, SNAKE_STATE_LENGTH])
+            ) as Tensor;
+
+            const outputArray = ((await outputTensor.array()) as number[][])[0];
+
+            const maxQ = Math.max(...outputArray);
+
+            const oldQ = oldQArray[index][action];
+
+            /**
+             * Q 学习核心公式
+             */
+            const newQ =
+              oldQ +
+              this.learnRate *
+                (reward + (done ? 0 : this.attenuationFactor * maxQ) - oldQ);
+
+            return newQ;
+          })
         );
-
-        const maxQ = Math.max(...outputArray.flat());
-
-        const oldQ = oldQArray[index][0];
-
-        /**
-         * Q 学习核心公式
-         */
-        const newQ =
-          oldQ +
-          this.learnRate *
-            (x.reward + (x.done ? 0 : this.attenuationFactor * maxQ) - oldQ);
-        return newQ;
       })
     );
 
-    const outputTensor = tensor2d(outputArray, [batchSize, 1]);
-
-    const res = await this.trainingModel.fit(inputTensor, outputTensor, {
+    /**
+     * batchSize * 4
+     */
+    const outputTensor = tensor2d(outputArray, [
       batchSize,
-    });
+      this.nodeLengthOfLayers[this.nodeLengthOfLayers.length - 1],
+    ]);
+
+    const res = await this.trainingModel.fit(inputTensor, outputTensor);
 
     console.log(`loss:`, res.history.loss?.[0]);
 
@@ -176,19 +189,33 @@ export default class DQNModel extends BaseModel {
   }
 
   createModel() {
-    const modelLayers = this.nodeLengthOfLayers.map((units, index) => {
-      if (index === 0) {
-        return layers.batchNormalization({ inputShape: [units] });
-      }
+    const modelLayers = this.nodeLengthOfLayers
+      .map((units, index) => {
+        if (index === 0) {
+          return layers.batchNormalization({ inputShape: [units] });
+        }
 
-      const layer = layers.dense({
-        units,
-        useBias: true,
-        activation:
-          index === this.nodeLengthOfLayers.length - 1 ? "relu" : "sigmoid",
-      });
-      return layer;
-    });
+        if (index === this.nodeLengthOfLayers.length - 1) {
+          const layer = layers.dense({
+            units,
+            useBias: true,
+          });
+
+          const activation = layers.leakyReLU();
+
+          return [layer, activation];
+        }
+
+        const layer = layers.dense({
+          units,
+          useBias: true,
+          activation:
+            index === this.nodeLengthOfLayers.length - 1 ? "relu" : "sigmoid",
+        });
+
+        return layer;
+      })
+      .flat();
 
     const model = sequential({
       layers: modelLayers,

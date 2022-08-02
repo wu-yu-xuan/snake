@@ -92,7 +92,7 @@ export default class Game {
         victory++;
       }
 
-      if (index % 50 === 0) {
+      if (index && index % 50 === 0) {
         await this.save();
       }
     }

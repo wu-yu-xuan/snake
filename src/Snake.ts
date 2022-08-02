@@ -2,7 +2,11 @@
  * 无用文件，先不删
  */
 import { sigmoid, tensor, tensor1d } from "@tensorflow/tfjs";
-import { SNAKE_DIRECTION_ACTION_MAP, SNAKE_STATE_LENGTH } from "./const";
+import {
+  SNAKE_ACTION_ARRAY,
+  SNAKE_DIRECTION_ACTION_MAP,
+  SNAKE_STATE_LENGTH,
+} from "./const";
 import BaseModel from "./model/BaseModel";
 import TrainingDataService from "./TrainingDataService";
 import { Point, SnakeAction, SnakeOptions } from "./types";
@@ -57,6 +61,12 @@ export default class Snake {
       return;
     }
 
+    /**
+     * 生成训练数据。
+     * 不需要训练的话可以跳过这一步
+     */
+    this.generateTrainingData();
+
     const currentState = this.getState();
 
     const action = await this.model.predict(currentState);
@@ -72,13 +82,6 @@ export default class Snake {
 
     if (isDead) {
       this.isDead = true;
-      this.trainingData.push({
-        currentState,
-        action,
-        reward: 0,
-        nextState: this.getState(),
-        done: true,
-      });
       return;
     }
 
@@ -92,21 +95,9 @@ export default class Snake {
      * 吃到食物了
      */
     if (eaten) {
-      /**
-       * 记录状态
-       */
-      const nextState = this.getState();
-
       const reward = 1;
       this.score += reward;
-      this.leftStep += reward;
-      this.trainingData.push({
-        currentState,
-        action,
-        reward,
-        nextState,
-        done: false,
-      });
+      this.leftStep += 10;
 
       /**
        * 生成下个食物
@@ -128,33 +119,63 @@ export default class Snake {
       return;
     }
 
-    const nextState = this.getState();
-    const reward =
-      this.getRewardByState(nextState) - this.getRewardByState(currentState);
-    this.score += reward;
+    /**
+     * 没有剩余步数了
+     */
     if (this.leftStep < 0) {
       this.isDead = true;
       return;
     }
-
-    /**
-     * 正常前进
-     */
-
-    this.trainingData.push({
-      currentState,
-      action,
-      reward,
-      nextState,
-      done: false,
-    });
   }
 
-  getState() {
-    return [
-      this.body.x - (this.food?.x ?? 0),
-      this.body.y - (this.food?.y ?? 0),
-    ];
+  generateTrainingData() {
+    const currentState = this.getState();
+
+    const nextArray = SNAKE_ACTION_ARRAY.map((action) => {
+      const nextPoint = this.getNextPoint(action);
+      const nextState = this.getState(nextPoint);
+      const isDead = this.isWall(nextPoint);
+      /**
+       * 撞墙死亡
+       */
+      if (isDead) {
+        return {
+          action,
+          reward: -1,
+          nextState,
+          done: true,
+        };
+      }
+
+      const eaten =
+        this.food!.x === nextPoint.x && this.food!.y === nextPoint.y;
+      if (eaten) {
+        /**
+         * 吃到食物了
+         */
+        return {
+          action,
+          reward: 1,
+          nextState,
+          done: false,
+        };
+      }
+
+      return {
+        action,
+        reward:
+          this.getRewardByState(nextState) -
+          this.getRewardByState(currentState),
+        nextState,
+        done: false,
+      };
+    });
+
+    this.trainingData.push({ currentState, nextArray });
+  }
+
+  getState(body = this.body) {
+    return [body.x - (this.food?.x ?? 0), body.y - (this.food?.y ?? 0)];
   }
 
   /**

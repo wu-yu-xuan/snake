@@ -34,10 +34,12 @@ export enum SnakeAction {
 
 export interface SingleTrainingData {
   currentState: number[];
-  action: SnakeAction;
-  nextState: number[];
-  reward: number;
-  done?: boolean;
+  nextArray: Array<{
+    action: SnakeAction;
+    nextState: number[];
+    reward: number;
+    done?: boolean;
+  }>;
 }
 
 export interface BaseModelOptions {
