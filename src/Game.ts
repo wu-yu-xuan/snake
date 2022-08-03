@@ -18,7 +18,7 @@ export default class Game {
 
   maxScore: number;
 
-  constructor({ width = 5, height = 5, maxScore = 2000 }: GameOptions) {
+  constructor({ width = 3, height = 3, maxScore = 2000 }: GameOptions) {
     this.width = width;
 
     this.height = height;

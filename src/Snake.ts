@@ -3,6 +3,7 @@
  */
 import { sigmoid, tensor, tensor1d } from "@tensorflow/tfjs";
 import {
+  EIGHT_DIMENSION,
   SNAKE_ACTION_ARRAY,
   SNAKE_DIRECTION_ACTION_MAP,
   SNAKE_STATE_LENGTH,
@@ -163,9 +164,7 @@ export default class Snake {
 
       return {
         action,
-        reward:
-          this.getRewardByState(nextState) -
-          this.getRewardByState(currentState),
+        reward: 0,
         nextState,
         done: false,
       };
@@ -175,7 +174,23 @@ export default class Snake {
   }
 
   getState(body = this.body) {
-    return [body.x - (this.food?.x ?? 0), body.y - (this.food?.y ?? 0)];
+    const wallArray = EIGHT_DIMENSION.map((point) => {
+      const newPoint = {
+        x: body.x + point.x,
+        y: body.y + point.y,
+      };
+      return this.isWall(newPoint) ? 1 : 0;
+    });
+
+    const foodArray = EIGHT_DIMENSION.map((point) => {
+      const newPoint = {
+        x: body.x + point.x,
+        y: body.y + point.y,
+      };
+      return this.food!.x === newPoint.x && this.food!.y === newPoint.y ? 1 : 0;
+    });
+
+    return [...wallArray, ...foodArray];
   }
 
   /**
@@ -196,9 +211,5 @@ export default class Snake {
       x: this.body.x + movement.x,
       y: this.body.y + movement.y,
     };
-  }
-
-  getRewardByState(state: number[]) {
-    return 0.001 / Math.sqrt(state.reduce((acc, cur) => acc + cur * cur, 0));
   }
 }

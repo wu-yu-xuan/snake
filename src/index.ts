@@ -1,9 +1,6 @@
 import Game from "./Game";
 
-const game = new Game({
-  width: 5,
-  height: 5,
-});
+const game = new Game({});
 
 async function main() {
   game.iterate(100);

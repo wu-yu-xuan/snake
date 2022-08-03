@@ -5,6 +5,7 @@ import {
   tensor,
   Tensor,
   tensor2d,
+  train,
 } from "@tensorflow/tfjs";
 import { writeJSON } from "fs-extra";
 import {
@@ -30,19 +31,19 @@ export default class DQNModel extends BaseModel {
 
   syncEpochLeft: number;
 
+  lossArray: number[] = [];
+
   constructor({
     trainingData,
     learnRate = 0.7,
     attenuationFactor = 0.8,
-    syncEpoch = 20,
+    syncEpoch = 25,
     nodeLengthOfLayers = [
       SNAKE_STATE_LENGTH,
-      8,
       16,
       32,
       16,
       8,
-      4,
       /**
        * action 个数个 Q。
        * 如果 action 作为输入层，则需要记得进行 oneHot 编码。
@@ -108,7 +109,7 @@ export default class DQNModel extends BaseModel {
     const inputArray = dataArray.map((x) => x.currentState).flat();
 
     /**
-     * batchSize * 3
+     * batchSize * inputSize
      */
     const inputTensor = tensor2d(inputArray, [
       this.nodeLengthOfLayers[0],
@@ -161,41 +162,34 @@ export default class DQNModel extends BaseModel {
       this.nodeLengthOfLayers[this.nodeLengthOfLayers.length - 1],
     ]);
 
-    const res = await this.trainingModel.fit(inputTensor, outputTensor);
+    const res = await this.trainingModel.fit(inputTensor, outputTensor, {
+      batchSize,
+    });
 
-    console.log(`loss:`, res.history.loss?.[0]);
+    const loss = res.history.loss?.[0];
+
+    if (typeof loss === "number") {
+      console.log(`loss:`, loss);
+
+      this.lossArray.push(loss);
+    }
 
     this.syncEpochLeft--;
   }
 
-  async getOutputArray(model: Sequential, currentState: number[]) {
-    const inputArray = SNAKE_ACTION_ARRAY.map((action) => {
-      return [...currentState, action];
-    }).flat();
-
-    const input = tensor2d(inputArray, [
-      this.nodeLengthOfLayers[0],
-      SNAKE_ACTION_ARRAY.length,
-    ]).transpose();
-
-    const output = model.predict(input) as Tensor;
-
-    const outputArray = (await output.array()) as [number][];
-
-    /**
-     * 1 * 4
-     */
-    return outputArray;
-  }
-
   createModel() {
     const modelLayers = this.nodeLengthOfLayers
+      .slice(1)
       .map((units, index) => {
         if (index === 0) {
-          return layers.batchNormalization({ inputShape: [units] });
+          return layers.dense({
+            units,
+            useBias: true,
+            inputShape: [this.nodeLengthOfLayers[0]],
+          });
         }
 
-        if (index === this.nodeLengthOfLayers.length - 1) {
+        if (index === this.nodeLengthOfLayers.length - 2) {
           const layer = layers.dense({
             units,
             useBias: true,
@@ -209,8 +203,7 @@ export default class DQNModel extends BaseModel {
         const layer = layers.dense({
           units,
           useBias: true,
-          activation:
-            index === this.nodeLengthOfLayers.length - 1 ? "relu" : "sigmoid",
+          activation: "sigmoid",
         });
 
         return layer;
@@ -246,5 +239,12 @@ export default class DQNModel extends BaseModel {
       this.trainingModel.getWeights().map((x) => x.array())
     );
     return writeJSON(`./src/data/DQN.json`, json);
+  }
+
+  log(): void {
+    console.log(
+      `avg loss`,
+      this.lossArray.reduce((acc, cur) => acc + cur, 0) / this.lossArray.length
+    );
   }
 }

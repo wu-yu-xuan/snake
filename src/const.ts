@@ -1,10 +1,10 @@
 import { Point, SnakeAction } from "./types";
 
 /**
- * - 蛇的 x 坐标 - 距离食物的 x 坐标
- * - 蛇的 y 坐标 - 距离食物的 y 坐标
+ * - 八个方向上是否有障碍物。
+ * - 八个方向上是否有食物。
  */
-export const SNAKE_STATE_LENGTH = 2;
+export const SNAKE_STATE_LENGTH = 16;
 
 export const MAX_TRAINING_DATA_LENGTH = 1500;
 
@@ -20,4 +20,42 @@ export const SNAKE_ACTION_ARRAY = [
   SnakeAction.right,
   SnakeAction.down,
   SnakeAction.left,
+];
+
+/**
+ * 从0点方向顺时针绕一圈的八个方向
+ */
+export const EIGHT_DIMENSION: Point[] = [
+  {
+    x: 0,
+    y: 1,
+  },
+  {
+    x: 1,
+    y: 1,
+  },
+  {
+    x: 1,
+    y: 0,
+  },
+  {
+    x: 1,
+    y: -1,
+  },
+  {
+    x: 0,
+    y: -1,
+  },
+  {
+    x: -1,
+    y: -1,
+  },
+  {
+    x: -1,
+    y: 0,
+  },
+  {
+    x: -1,
+    y: 1,
+  },
 ];
