@@ -1,6 +1,5 @@
 import BaseModel from "./model/BaseModel";
 import DQNModel from "./model/DQNModel";
-import QLearningModel from "./model/QLearningModel";
 import Snake from "./Snake";
 import TrainingDataService from "./TrainingDataService";
 import { GameOptions } from "./types";
@@ -16,14 +15,10 @@ export default class Game {
 
   model: BaseModel;
 
-  maxScore: number;
-
-  constructor({ width = 3, height = 3, maxScore = 2000 }: GameOptions) {
+  constructor({ width = 3, height = 3 }: GameOptions) {
     this.width = width;
 
     this.height = height;
-
-    this.maxScore = maxScore;
 
     this.trainingData = new TrainingDataService();
 
@@ -38,7 +33,6 @@ export default class Game {
       height: this.height,
       trainingData: this.trainingData,
       model: this.model,
-      maxScore: this.maxScore,
     });
   }
 
@@ -83,7 +77,7 @@ export default class Game {
     for (let index = 0; index < iterateCount; index++) {
       const snake = await this.iterateUntilDead();
 
-      if (snake.score > 1) {
+      if (snake.score) {
         console.log(index, "score", snake.score, "step", snake.step);
         length++;
       }

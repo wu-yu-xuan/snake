@@ -38,7 +38,13 @@ export default class Snake {
 
   maxScore: number;
 
-  constructor({ model, width, height, trainingData, maxScore }: SnakeOptions) {
+  constructor({
+    model,
+    width,
+    height,
+    trainingData,
+    maxScore = 200,
+  }: SnakeOptions) {
     this.model = model;
     this.width = width;
     this.height = height;
@@ -142,7 +148,7 @@ export default class Snake {
       if (isDead) {
         return {
           action,
-          reward: -1,
+          reward: -0.0001,
           nextState,
           done: true,
         };

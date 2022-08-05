@@ -4,7 +4,6 @@ import TrainingDataService from "./TrainingDataService";
 export interface GameOptions {
   width?: number;
   height?: number;
-  maxScore?: number;
 }
 
 export interface SnakeOptions {
@@ -12,7 +11,7 @@ export interface SnakeOptions {
   height: number;
   trainingData: TrainingDataService;
   model: BaseModel;
-  maxScore: number;
+  maxScore?: number;
 }
 
 export interface NetworkOptions {

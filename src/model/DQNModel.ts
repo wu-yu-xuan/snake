@@ -40,10 +40,8 @@ export default class DQNModel extends BaseModel {
     syncEpoch = 25,
     nodeLengthOfLayers = [
       SNAKE_STATE_LENGTH,
-      16,
-      32,
-      16,
-      8,
+      12,
+      12,
       /**
        * action 个数个 Q。
        * 如果 action 作为输入层，则需要记得进行 oneHot 编码。
@@ -84,6 +82,10 @@ export default class DQNModel extends BaseModel {
 
     const outputArray = ((await outputTensor.array()) as [number[]])[0];
 
+    if (outputArray.every((x) => x === 0)) {
+      return Math.floor(Math.random() * SNAKE_ACTION_ARRAY.length);
+    }
+
     return outputArray.reduce<number>((acc, cur, index) => {
       if (outputArray[acc] >= cur) {
         return acc;
@@ -112,9 +114,9 @@ export default class DQNModel extends BaseModel {
      * batchSize * inputSize
      */
     const inputTensor = tensor2d(inputArray, [
-      this.nodeLengthOfLayers[0],
       batchSize,
-    ]).transpose();
+      this.nodeLengthOfLayers[0],
+    ]);
 
     /**
      * 4 * batchSize
@@ -148,7 +150,7 @@ export default class DQNModel extends BaseModel {
               this.learnRate *
                 (reward + (done ? 0 : this.attenuationFactor * maxQ) - oldQ);
 
-            return newQ;
+            return Math.max(newQ, 0);
           })
         );
       })
@@ -162,9 +164,7 @@ export default class DQNModel extends BaseModel {
       this.nodeLengthOfLayers[this.nodeLengthOfLayers.length - 1],
     ]);
 
-    const res = await this.trainingModel.fit(inputTensor, outputTensor, {
-      batchSize,
-    });
+    const res = await this.trainingModel.fit(inputTensor, outputTensor);
 
     const loss = res.history.loss?.[0];
 
@@ -189,21 +189,10 @@ export default class DQNModel extends BaseModel {
           });
         }
 
-        if (index === this.nodeLengthOfLayers.length - 2) {
-          const layer = layers.dense({
-            units,
-            useBias: true,
-          });
-
-          const activation = layers.leakyReLU();
-
-          return [layer, activation];
-        }
-
         const layer = layers.dense({
           units,
           useBias: true,
-          activation: "sigmoid",
+          activation: "relu",
         });
 
         return layer;
@@ -216,7 +205,7 @@ export default class DQNModel extends BaseModel {
 
     model.compile({
       loss: "meanSquaredError",
-      optimizer: "sgd",
+      optimizer: train.sgd(0.5),
     });
 
     return model;
